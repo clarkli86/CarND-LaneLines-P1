@@ -1,9 +1,5 @@
 # **Finding Lane Lines on the Road**
 
-## Writeup Template
-
-### You can use this file as a template for your writeup if you want to submit it as a markdown file. But feel free to use some other method and submit a pdf if you prefer.
-
 ---
 
 **Finding Lane Lines on the Road**
@@ -12,49 +8,56 @@ The goals / steps of this project are the following:
 * Make a pipeline that finds lane lines on the road
 * Reflect on your work in a written report
 
-
-[//]: # (Image References)
-
-[image1]: ./examples/grayscale.jpg "Grayscale"
-
 ---
 
 ### Reflection
 
 ### 1. Describe your pipeline. As part of the description, explain how you modified the draw_lines() function.
 
-My pipeline consisted of 5 steps. First, I converted the images to grayscale, then I ....
-2. Gaussion Smoothing to average pixels. The kernel size must not be too big to average the edges out. The kernel size must not be too small to contain big gradients everwhere.
-3. Apply region selection as lane markings usually appear at the same region of camera view.
-4. Apply hough transform or canny edge detector
-4.1 Why prefer hough transform to canny edge detector?
-5. Draw the found edges in line segments
+- **Pipeline**
+My pipeline consisted of 5 steps.
+ 1. Convert the images to grayscale because lane markings could be in different colors.
+ 1. Apply Gaussion Smoothing to image. The kernel size must not be too big to blur the edges out. The kernel size must not be too small to contain big gradients all over the image.
+ 1. Use Canny Edge Detector to increase contrsat and remove noise.
+ 1. Apply Region Selection as lane markings usually appear at the same region of camera view.
+ 1. Apply Hough Transform to find connected lines. Parameters must be tuned to only keep long contineous lines which are more likely to be lane markings.
 
-In order to draw a single line on the left and right lanes, I modified the draw_lines() function by ...
+ Output of each step in my pipeline
+ - Grayscale
+ <img src="res/original.png" width="300px"/>
+ - Gaussian Smoothing
+ <img src="res/gaussian_blur.png" width="300px"/>
+ - Canny Edge
+ <img src="res/canny.png" width="300px"/>
+ - Regsion Selection
+ <img src="res/region.png" width="300px"/>
+ - Hough Transform
+ <img src="res/hough_transform.png" width="300px"/>
 
-If you'd like to include images to show how the pipeline works, here is how to include an image:
+- **Draw Line**
+In order to draw a single line on the left and right lanes, I modified the draw_lines() function by picking the segment that best fits all endpoints. `numpy.linalg.lstsq` is employed to find the segment with least squared error. [1]
 
-![alt text][image1]
-
+ - Output of averaged segments
+<img src="res/draw_line.png" width="300px"/>
 
 ### 2. Identify potential shortcomings with your current pipeline
 
+The potential shortcomings with current pipeline are
 
-One potential shortcoming would be what would happen when ...
-
-When driving on curve, use yaw rate to modify the parameters for polygon and line segments
-When driving under different lighting/weather conditions, apply different parameters
-
-Another shortcoming could be ...
-Some road may not have a lane marking, so need to find the edges of road
+1. If camera is installed at different heights or with a different angle, the selected region needs to be adjusted.
+1. Cracks on the road surface may be classied as lane marking provided the slope is within threshold
+1. When driving on curved road or making turns, lane marking may not be straight lines.
+1. When driving under different lighting/weather conditions, contrast between lane marking and road surface might be too low in some frames. Consequently no lane marking will be identified.
+1. There might be multiple lanes markings when the vehicle is changing lanes/merging
 
 ### 3. Suggest possible improvements to your pipeline
 
-A possible improvement would be to ...
+To mitigate/resolve the potentional shortcommings, the following approaches could be considered.
+1. Inform driver to adjust camera position or selected region if lane marking couldn't be detected on known roads.
+1. Most lane markings are in white/yellow. This feature could be employed to filter out more false positives.
+1. When driving on curved path, use yaw rate to adjust selected region and slope thresholds.
+1. In case lane marking couldn't be detected (when driving in shadow or through an intersection) or wobbly (unstable average slope), use the running average of the last X frames.
+1. When the road does not have lane marking, detect the edges of road to predict virtual lane markings.
 
-When driving on curve, use yaw rate to modify the parameters for polygon and line segments
-When driving under different lighting/weather conditions, apply different parameters
-
-
-Another potential improvement could be to ...
-Some road may not have a lane marking, so need to find the edges of road
+### 4. References
+[1] https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html
